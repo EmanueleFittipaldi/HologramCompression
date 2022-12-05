@@ -5,8 +5,7 @@ import math as math
 import scipy.fft
 import confresnel1D
 import fourierfresnel1D
-import fpzip
-from givensphaserot import givenphaserot
+#from givensphaserot import givenphaserot
 
 #Per scalare il plot dell'ologramma ricostruito
 plt.rcParams["figure.figsize"] = (60,60)

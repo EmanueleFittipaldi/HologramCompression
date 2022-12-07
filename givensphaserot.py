@@ -1,5 +1,4 @@
 import numpy as np
-from pymatbridge import Matlab
 
 """% applies a lossless Givens phase rotation to an integer signal X, with phase delay P
 """

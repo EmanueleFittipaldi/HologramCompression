@@ -4,6 +4,14 @@ import numpy as np
 """
 
 def givenphaserot(x, p, fw):
+    """The function givenphaserot computes the Givens rotation of an input array x
+    using the phase values in another input array p. The direction of the rotation
+    is determined by the fw boolean input, with True indicating a forward rotation
+    and False indicating a backward rotation. The function first checks that the dimensions
+    of x and p are equal. It then applies a Givens rotation to x using the values in p,
+    and applies a quadrant swap if necessary depending on the direction of the rotation
+    and the values in p. The output is the rotated version of x."""
+
     assert np.size(x) == np.size(p), "Input argument X & P must be equal dimension"
 
     # givens rotation

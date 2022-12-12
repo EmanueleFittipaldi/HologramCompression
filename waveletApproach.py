@@ -40,13 +40,15 @@ def compress_hologram(hologram, filename, wavelet='db4', mode='hard'):
     for coeffs in coefficients:
         for i in range(len(coeffs)):
             for j in range(len(coeffs[i])):
-                coeffs[i][j] = pywt.threshold(coeffs[i][j],value=1900000000, mode=mode)
+                coeffs[i][j] = pywt.threshold(coeffs[i][j],value=200000000, mode=mode)
+
 
     coefficients = np.array(coefficients,dtype='object')
     np.savez_compressed('waveletCoeff.npz', coefficients)
 
     #Reconstruct the compressed hologram data
-    #compressed_hologram = pywt.waverec2(coefficients, wavelet=wavelet)
-    #hologramReconstruction(compressed_hologram,pp,dist,wlen)
+    coefficients =  coefficients.tolist()
+    compressed_hologram = pywt.waverec2(coefficients, wavelet=wavelet)
+    hologramReconstruction(compressed_hologram,pp,dist,wlen)
 
 compress_hologram(holo,'compressedHologram.txt',wavelet='db4',mode='hard')

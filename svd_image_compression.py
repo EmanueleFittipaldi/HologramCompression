@@ -1,22 +1,17 @@
-import io
 import os.path
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io
-
 from HoloUtils import getComplex, intFresnel2D, fourierPhaseMultiply
 
-f = scipy.io.loadmat('Hol_2D_dice.mat')  # aprire il file .mat
-
+holoFileName = 'Hol_3D_venus.mat'
+f = scipy.io.loadmat(holoFileName)  # aprire il file .mat
+print(f.keys())
+print(f)
 # Dice Parameters
-pp = 8e-6  # pixel pitch
-pp = np.matrix(pp)
-wlen = 632.8e-9  # wavelenght
-wlen = np.matrix(wlen)
-dist = 9e-1  # propogation depth
-dist = np.matrix(dist)
-
+pp = np.matrix(f['pitch'][0]) # pixel pitch
+wlen = np.matrix(f['wlen'][0]) # wavelenght
+dist = np.matrix(f['zrec'][0]) # propogation depth
 # holo è la matrice di numeri complessi
 holo = np.matrix(f['Hol'])
 
@@ -33,7 +28,7 @@ def reconstImg(U, sigma, V, start, end, jump):
 def showHologram(complex_matrix, title):
     t = intFresnel2D(complex_matrix, False, pp, dist, wlen)
     t = fourierPhaseMultiply(t, False, pp, dist, wlen)
-    plt.imshow(np.imag(t), cmap='gray')
+    plt.imshow(np.imag(t), cmap='gray_r')
     plt.title(title)
     plt.show()
 
@@ -62,44 +57,47 @@ U_IMAG_CUT = U_IMAG[:, :CROP_RATE]
 # tagliata la matrice V IMAG da 1080x1080 a 200x1080 -> fino a 200 c'è informazione
 V_IMAG_CUT = V_IMAG[:CROP_RATE, :]
 
+if not os.path.isdir('svdImageCompression/' + holoFileName):
+    os.makedirs('svdImageCompression/' + holoFileName)
+
 # PARTE REAL
-np.savez('svdImageCompression/U_REAL_NP', U_REAL)
-np.savez('svdImageCompression/U_REAL_P', U_REAL_CUT)
-np.savez('svdImageCompression/V_REAL_NP', V_REAL)
-np.savez('svdImageCompression/V_REAL_P', V_REAL_CUT)
-np.savez('svdImageCompression/SIGMA_REAL', sigma_REAL)
+np.savez('svdImageCompression/' + holoFileName + '/U_REAL_NP', U_REAL)
+np.savez('svdImageCompression/' + holoFileName + '/U_REAL_P', U_REAL_CUT)
+np.savez('svdImageCompression/' + holoFileName + '/V_REAL_NP', V_REAL)
+np.savez('svdImageCompression/' + holoFileName + '/V_REAL_P', V_REAL_CUT)
+np.savez('svdImageCompression/' + holoFileName + '/SIGMA_REAL', sigma_REAL)
 
 # PARTE IMAG
-np.savez('svdImageCompression/U_IMAG_NP', U_IMAG)
-np.savez('svdImageCompression/U_IMAG_P', U_IMAG_CUT)
-np.savez('svdImageCompression/V_IMAG_NP', V_IMAG)
-np.savez('svdImageCompression/V_IMAG_P', V_IMAG_CUT)
-np.savez('svdImageCompression/SIGMA_IMAG', sigma_IMAG)
+np.savez('svdImageCompression/' + holoFileName + '/U_IMAG_NP', U_IMAG)
+np.savez('svdImageCompression/' + holoFileName + '/U_IMAG_P', U_IMAG_CUT)
+np.savez('svdImageCompression/' + holoFileName + '/V_IMAG_NP', V_IMAG)
+np.savez('svdImageCompression/' + holoFileName + '/V_IMAG_P', V_IMAG_CUT)
+np.savez('svdImageCompression/' + holoFileName + '/SIGMA_IMAG', sigma_IMAG)
 
 # DECOMPRESSIONE
 
 # carica il file npz
-with np.load('svdImageCompression/U_REAL_P.npz') as data:
+with np.load('svdImageCompression/' + holoFileName + '/U_REAL_P.npz') as data:
     # ottieni tutti gli array presenti nel file
     U_R_COMPRESS = data['arr_0']
 
-with np.load('svdImageCompression/V_REAL_P.npz') as data:
+with np.load('svdImageCompression/' + holoFileName + '/V_REAL_P.npz') as data:
     # ottieni tutti gli array presenti nel file
     V_R_COMPRESS = data['arr_0']
 
-with np.load('svdImageCompression/SIGMA_REAL.npz') as data:
+with np.load('svdImageCompression/' + holoFileName + '/SIGMA_REAL.npz') as data:
     # ottieni tutti gli array presenti nel file
     SIGMA_R = data['arr_0']
 
-with np.load('svdImageCompression/U_IMAG_P.npz') as data:
+with np.load('svdImageCompression/' + holoFileName + '/U_IMAG_P.npz') as data:
     # ottieni tutti gli array presenti nel file
     U_I_COMPRESS = data['arr_0']
 
-with np.load('svdImageCompression/V_IMAG_P.npz') as data:
+with np.load('svdImageCompression/' + holoFileName + '/V_IMAG_P.npz') as data:
     # ottieni tutti gli array presenti nel file
     V_I_COMPRESS = data['arr_0']
 
-with np.load('svdImageCompression/SIGMA_IMAG.npz') as data:
+with np.load('svdImageCompression/' + holoFileName + '/SIGMA_IMAG.npz') as data:
     # ottieni tutti gli array presenti nel file
     SIGMA_I = data['arr_0']
 
@@ -120,14 +118,13 @@ def sizeof_fmt(num, suffix="B"):
     return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
 
 
-total_size_HOL_NP = os.path.getsize('svdImageCompression/U_REAL_NP.npz') + os.path.getsize('svdImageCompression/V_REAL_NP.npz') + os.path.getsize('svdImageCompression/SIGMA_REAL.npz') + os.path.getsize('svdImageCompression/U_IMAG_NP.npz') + os.path.getsize('svdImageCompression/V_IMAG_NP.npz') + os.path.getsize('svdImageCompression/SIGMA_IMAG.npz')
+total_size_HOL_NP = os.path.getsize('svdImageCompression/' + holoFileName + '/U_REAL_NP.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_REAL_NP.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_REAL.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/U_IMAG_NP.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_IMAG_NP.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_IMAG.npz')
 _ , total_size_HOL_NP_formatted = sizeof_fmt(total_size_HOL_NP)
 print('NON COMPRESSA: ', total_size_HOL_NP_formatted)
 
-total_size_HOL_P = os.path.getsize('svdImageCompression/U_REAL_P.npz') + os.path.getsize('svdImageCompression/V_REAL_P.npz') + os.path.getsize('svdImageCompression/SIGMA_REAL.npz') + os.path.getsize('svdImageCompression/U_IMAG_P.npz') + os.path.getsize('svdImageCompression/V_IMAG_P.npz') + os.path.getsize('svdImageCompression/SIGMA_IMAG.npz')
+total_size_HOL_P = os.path.getsize('svdImageCompression/' + holoFileName + '/U_REAL_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_REAL_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_REAL.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/U_IMAG_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_IMAG_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_IMAG.npz')
 _ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_P)
 print('COMPRESSA: ', total_size_HOL_P_formatted)
 
 rate = (float(total_size_HOL_P) / float(total_size_HOL_NP)) * 100
 print(f"Rate: {(100 - rate):.2f} %")
-

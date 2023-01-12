@@ -4,111 +4,96 @@ import numpy as np
 import scipy.io
 from HoloUtils import getComplex, intFresnel2D, fourierPhaseMultiply
 
-holoFileName = 'Hol_3D_venus.mat'
+holoFileName = 'Hol_2D_dice.mat'
 f = scipy.io.loadmat(holoFileName)  # aprire il file .mat
 print(f.keys())
-print(f)
+
 # Dice Parameters
 pp = np.matrix(f['pitch'][0]) # pixel pitch
 wlen = np.matrix(f['wlen'][0]) # wavelenght
-dist = np.matrix(f['zrec'][0]) # propogation depth
+dist = np.matrix(f['zobj'][0]) # propogation depth
 # holo è la matrice di numeri complessi
 holo = np.matrix(f['Hol'])
 
-# Effettuo un crop da 1920*1080 a 1080*1080 perché l'algoritmo per la
-holo = holo[:, 420:]
-holo = holo[:, :-420]
 
+# pad_width = ((0, holo.shape[1]-holo.shape[0]), (0, 0))
+# padded = np.pad(holo, pad_width, mode='constant', constant_values=0)
 
-def reconstImg(U, sigma, V, start, end, jump):
+def reconst_matrix(U, sigma, V, start, end, jump):
     for i in range(start, end, jump):
-        reconstimg = np.matrix(U[:, :i]) * np.diag(sigma[:i]) * np.matrix(V[:i, :])
-    return reconstimg
+        reconst_matrix = np.matrix(U[:, :i]) * np.diag(sigma[:i]) * np.matrix(V[:i, :])
 
-def showHologram(complex_matrix, title):
+    return reconst_matrix
+
+def showHologram(complex_matrix, title, final):
+    if (final):
+        complex_matrix = complex_matrix[:, 420:]
+        complex_matrix = complex_matrix[:, :-420]
+
     t = intFresnel2D(complex_matrix, False, pp, dist, wlen)
     t = fourierPhaseMultiply(t, False, pp, dist, wlen)
     plt.imshow(np.imag(t), cmap='gray_r')
     plt.title(title)
     plt.show()
 
-#creazione di SVD parte immaginaria
-U_IMAG, sigma_IMAG, V_IMAG = np.linalg.svd(np.imag(holo))
-#creazione di SVD parte reale
-U_REAL, sigma_REAL, V_REAL = np.linalg.svd(np.real(holo))
+# #original hologram
+# showHologram(holo, 'Ricostruita', True)
+print('Matrice complessa: ', holo.shape)
+U_HOLO, SIGMA_HOLO, V_HOLO = np.linalg.svd(holo)
+print('Matrice U: ', U_HOLO.shape)
+print('Matrice SIGMA: ', SIGMA_HOLO.shape)
+print('Matrice V: ', V_HOLO.shape)
 
-# # parte immaginaria ricostruita
-# reconstImage_IMAG = reconstImg(U_IMAG, sigma_IMAG, V_IMAG, 5, 101, 5) #TOTALE
-#
-# # parte real ricostruita
-# reconstImage_REAL = reconstImg(U_REAL, sigma_REAL, V_REAL, 5, 101, 5) #TOTALE
-#
-# # costruizione della matrice complessa ottenuta dalla ricostruzione delle due parti
-# complex_matrix = getComplex(reconstImage_REAL, reconstImage_IMAG)
 
-CROP_RATE = 20
-# COMPRESSIONE -> CROP DELLE MATRICI
-# tagliata la matrice U REAL da 1080x1080 a 1080x200 -> fino a 200 c'è informazione
-U_REAL_CUT = U_REAL[:, :CROP_RATE]
-# tagliata la matrice V REAL da 1080x1080 a 200x1080 -> fino a 200 c'è informazione
-V_REAL_CUT = V_REAL[:CROP_RATE, :]
-# tagliata la matrice U IMAG da 1080x1080 a 1080x200 -> fino a 200 c'è informazione
-U_IMAG_CUT = U_IMAG[:, :CROP_RATE]
-# tagliata la matrice V IMAG da 1080x1080 a 200x1080 -> fino a 200 c'è informazione
-V_IMAG_CUT = V_IMAG[:CROP_RATE, :]
+#COMPRESSIONE UTILIZZANDO IL VALORE k
+K_VALUE = 100
+print('K_VALUE: ', K_VALUE)
+# tagliata la matrice U REAL utilizzando k specificato
+U_HOLO_CUT = U_HOLO[:, :K_VALUE]
+# tagliata la matrice V REAL utilizzando k specificato
+V_HOLO_CUT = V_HOLO[:K_VALUE, :]
+# tagliata la diagonale SIGMA REAL prendendo i k valori singolari
+SIGMA_HOLO_CUT = SIGMA_HOLO[:K_VALUE]
+#print delle shapes delle matrici tagliate
+print('Matrice U ridotta: ', U_HOLO_CUT.shape)
+print('Matrice SIGMA ridotta: ', SIGMA_HOLO_CUT.shape)
+print('Matrice V ridotta: ', V_HOLO_CUT.shape)
 
+#SALVATAGGIO MATRICI
 if not os.path.isdir('svdImageCompression/' + holoFileName):
     os.makedirs('svdImageCompression/' + holoFileName)
 
-# PARTE REAL
-np.savez('svdImageCompression/' + holoFileName + '/U_REAL_NP', U_REAL)
-np.savez('svdImageCompression/' + holoFileName + '/U_REAL_P', U_REAL_CUT)
-np.savez('svdImageCompression/' + holoFileName + '/V_REAL_NP', V_REAL)
-np.savez('svdImageCompression/' + holoFileName + '/V_REAL_P', V_REAL_CUT)
-np.savez('svdImageCompression/' + holoFileName + '/SIGMA_REAL', sigma_REAL)
+#Matrix Original
+np.savez('svdImageCompression/' + holoFileName + '/Matrix_HOLO', holo)
 
 # PARTE IMAG
-np.savez('svdImageCompression/' + holoFileName + '/U_IMAG_NP', U_IMAG)
-np.savez('svdImageCompression/' + holoFileName + '/U_IMAG_P', U_IMAG_CUT)
-np.savez('svdImageCompression/' + holoFileName + '/V_IMAG_NP', V_IMAG)
-np.savez('svdImageCompression/' + holoFileName + '/V_IMAG_P', V_IMAG_CUT)
-np.savez('svdImageCompression/' + holoFileName + '/SIGMA_IMAG', sigma_IMAG)
+np.savez('svdImageCompression/' + holoFileName + '/U_HOLO_P', U_HOLO_CUT)
+np.savez('svdImageCompression/' + holoFileName + '/V_HOLO_P', V_HOLO_CUT)
+np.savez('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P', SIGMA_HOLO_CUT)
 
 # DECOMPRESSIONE
 
 # carica il file npz
-with np.load('svdImageCompression/' + holoFileName + '/U_REAL_P.npz') as data:
+with np.load('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz') as data:
     # ottieni tutti gli array presenti nel file
-    U_R_COMPRESS = data['arr_0']
+    U_COMPRESS = data['arr_0']
 
-with np.load('svdImageCompression/' + holoFileName + '/V_REAL_P.npz') as data:
+with np.load('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz') as data:
     # ottieni tutti gli array presenti nel file
-    V_R_COMPRESS = data['arr_0']
+    V_COMPRESS = data['arr_0']
 
-with np.load('svdImageCompression/' + holoFileName + '/SIGMA_REAL.npz') as data:
+with np.load('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz') as data:
     # ottieni tutti gli array presenti nel file
-    SIGMA_R = data['arr_0']
+    SIGMA_COMPRESS = data['arr_0']
 
-with np.load('svdImageCompression/' + holoFileName + '/U_IMAG_P.npz') as data:
-    # ottieni tutti gli array presenti nel file
-    U_I_COMPRESS = data['arr_0']
+print('Matrice U caricata: ', U_COMPRESS.shape)
+print('Matrice SIGMA caricata: ', SIGMA_COMPRESS.shape)
+print('Matrice V caricata: ', V_COMPRESS.shape)
 
-with np.load('svdImageCompression/' + holoFileName + '/V_IMAG_P.npz') as data:
-    # ottieni tutti gli array presenti nel file
-    V_I_COMPRESS = data['arr_0']
-
-with np.load('svdImageCompression/' + holoFileName + '/SIGMA_IMAG.npz') as data:
-    # ottieni tutti gli array presenti nel file
-    SIGMA_I = data['arr_0']
-
-# parte immaginaria ricostruita
-reconstCompResImage_IMAG = reconstImg(U_I_COMPRESS, SIGMA_I, V_I_COMPRESS, 5, CROP_RATE+1, 5)
-# parte real ricostruita
-reconstCompResImage_REAL = reconstImg(U_R_COMPRESS, SIGMA_R, V_R_COMPRESS, 5, CROP_RATE+1, 5)
-# costruizione della matrice complessa ottenuta dalla ricostruzione delle due parti
-complex_matrix = getComplex(reconstCompResImage_REAL, reconstCompResImage_IMAG)
-showHologram(complex_matrix, 'Ricostruita')
-
+# matrice ricostruita
+matrix_rec = reconst_matrix(U_COMPRESS, SIGMA_COMPRESS, V_COMPRESS, 5, K_VALUE+1, 5)
+showHologram(matrix_rec, 'Ologramma decompresso', True)
+np.savez('svdImageCompression/' + holoFileName + '/Matrix_RICOSTRUITA', matrix_rec)
 
 def sizeof_fmt(num, suffix="B"):
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
@@ -117,14 +102,19 @@ def sizeof_fmt(num, suffix="B"):
         num /= 1024.0
     return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
 
+total_size_HOL_ORIGINAL = os.path.getsize('svdImageCompression/' + holoFileName + '/Matrix_HOLO.npz')
+_ , total_size_HOL_ORIGINAL_formatted = sizeof_fmt(total_size_HOL_ORIGINAL)
+print('Dimensione matrice originale: ', total_size_HOL_ORIGINAL)
 
-total_size_HOL_NP = os.path.getsize('svdImageCompression/' + holoFileName + '/U_REAL_NP.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_REAL_NP.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_REAL.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/U_IMAG_NP.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_IMAG_NP.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_IMAG.npz')
-_ , total_size_HOL_NP_formatted = sizeof_fmt(total_size_HOL_NP)
-print('NON COMPRESSA: ', total_size_HOL_NP_formatted)
+print('Dimensione matrice U compressa: ', os.path.getsize('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz'))
+print('Dimensione matrice SIGMA compressa: ', os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz'))
+print('Dimensione matrice V compressa: ', os.path.getsize('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz'))
 
-total_size_HOL_P = os.path.getsize('svdImageCompression/' + holoFileName + '/U_REAL_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_REAL_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_REAL.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/U_IMAG_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_IMAG_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_IMAG.npz')
+total_size_HOL_P = os.path.getsize('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz')
 _ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_P)
-print('COMPRESSA: ', total_size_HOL_P_formatted)
+print('Somma dimensioni matrici compresse: ', total_size_HOL_P)
 
-rate = (float(total_size_HOL_P) / float(total_size_HOL_NP)) * 100
-print(f"Rate: {(100 - rate):.2f} %")
+rate = (float(total_size_HOL_P) / float(total_size_HOL_ORIGINAL)) * 100
+print(f"Rate compressione: {(100 - rate):.2f} %")
+
+print('1:',int(total_size_HOL_ORIGINAL/total_size_HOL_P))

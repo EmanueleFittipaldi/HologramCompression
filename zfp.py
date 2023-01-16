@@ -16,17 +16,17 @@ def sizeof_fmt(num, suffix="B"):
         num /= 1024.0
     return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
 
-
+holoFileName = 'Hol_2D_dice.mat'
+f = scipy.io.loadmat(holoFileName)  # aprire il file .mat
+print(f.keys())
 #Parametri
+
 pp = 8e-6  # pixel pitch
 pp = np.matrix(pp)
 wlen = 632.8e-9  # wavelenght
 wlen = np.matrix(wlen)
 dist = 9e-1  # propogation depth
 dist = np.matrix(dist)
-
-# holo è la matrice di numeri complessi
-f = scipy.io.loadmat('Hol_2D_dice.mat')
 
 # holo è la matrice di numeri complessi
 holo = np.matrix(f['Hol'])
@@ -45,23 +45,22 @@ np.savez('fpzipCompression/reale_NC', realMatrix)
 
 
 # Comprimo matrice immaginaria con zfpy
-
-compressed_data_imag: object = zfpy.compress_numpy(imagMatrix, tolerance = 1e-1)
+compressed_data_imag: object = zfpy.compress_numpy(imagMatrix, tolerance=1e-1)
 np.savez('fpzipCompression/immaginaria_C', compressed_data_imag)
 decompressed_array_imag: object = zfpy.decompress_numpy(compressed_data_imag)
 
-# confirm lossless compression/decompression
-np.testing.assert_allclose(imagMatrix, decompressed_array_imag,atol = 1e-1)
+# confirm lossy compression/decompression
+np.testing.assert_allclose(imagMatrix, decompressed_array_imag, atol=1e-1)
 #print( data_again_imag)
 matplotlib.image.imsave('matrice_immaginaria.bmp', decompressed_array_imag, cmap = 'gray')
 
 # Comprimo matrice reale con zfpy
-compressed_data_real = zfpy.compress_numpy(realMatrix,tolerance = 1e-1)
+compressed_data_real = zfpy.compress_numpy(realMatrix,tolerance=1e-1)
 np.savez('fpzipCompression/reale_C', compressed_data_real)
 decompressed_array_real: object = zfpy.decompress_numpy(compressed_data_real)
 
-# confirm lossless compression/decompression
-np.testing.assert_allclose(realMatrix, decompressed_array_real,atol = 1e-1)
+# confirm lossy compression/decompression
+np.testing.assert_allclose(realMatrix, decompressed_array_real, atol=1e-1)
 matplotlib.image.imsave('matrice_reale.bmp', decompressed_array_real, cmap = 'gray')
 
 

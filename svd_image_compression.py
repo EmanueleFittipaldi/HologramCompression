@@ -37,7 +37,7 @@ def showHologram(complex_matrix, title, final):
     plt.show()
 
 # #original hologram
-# showHologram(holo, 'Ricostruita', True)
+showHologram(holo, 'Originale', True)
 print('Matrice complessa: ', holo.shape)
 U_HOLO, SIGMA_HOLO, V_HOLO = np.linalg.svd(holo)
 print('Matrice U: ', U_HOLO.shape)
@@ -46,7 +46,7 @@ print('Matrice V: ', V_HOLO.shape)
 
 
 #COMPRESSIONE UTILIZZANDO IL VALORE k
-K_VALUE = 100
+K_VALUE = 20
 print('K_VALUE: ', K_VALUE)
 # tagliata la matrice U REAL utilizzando k specificato
 U_HOLO_CUT = U_HOLO[:, :K_VALUE]

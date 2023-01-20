@@ -1,25 +1,24 @@
 import pywt
 import scipy.io
 import numpy as np
-
+import os
 from HoloUtils import hologramReconstruction, compressBZIP2
 
-f = scipy.io.loadmat('Hol_2D_dice.mat')  # aprire il file .mat
-
-#Parametri del dado
-pp = 8e-6  # pixel pitch
-pp = np.matrix(pp)
-wlen = 632.8e-9  # wavelenght
-wlen = np.matrix(wlen)
-dist = 9e-1  # propogation depth
-dist = np.matrix(dist)
-
+holoFileName = 'CornellBox2_10K.mat'
+f = scipy.io.loadmat(holoFileName)  # aprire il file .mat
+print(f.keys())
+# Dice Parameters
+pp = np.matrix(f['pp'][0]) # pixel pitch
+wlen = np.matrix(f['wlen'][0]) # wavelenght
+dist = np.matrix(f['zrec'][0]) # propogation depth
+# holo è la matrice di numeri complessi
+holo = np.matrix(f['H'])
 #Holo è la matrice di numeri complessi
-holo = np.matrix(f['Hol'])
 
 #Effettuo un crop da 1920*1080 a 1080*1080 perché l'algoritmo per la
-holo = holo[:, 420:]
-holo = holo[:, :-420]
+# holo = holo[:, 420:]
+# holo = holo[:, :-420]
+np.savez('Matrix_HOLO', holo)
 
 def compress_hologram(hologram, filename, wavelet='db4', mode='hard'):
     """The wavedec2 method from the pywt library is used to perform a 2D wavelet transform on a given signal or image.
@@ -49,6 +48,12 @@ def compress_hologram(hologram, filename, wavelet='db4', mode='hard'):
     #Reconstruct the compressed hologram data
     coefficients =  coefficients.tolist()
     compressed_hologram = pywt.waverec2(coefficients, wavelet=wavelet)
-    hologramReconstruction(compressed_hologram,pp,dist,wlen)
-
+    # hologramReconstruction(compressed_hologram,pp,dist,wlen)
+    compressa = os.path.getsize('waveletCoeff.npz')
+    original = os.path.getsize('Matrix_HOLO.npz')
+    print(compressa)
+    print(original)
+    rate = (float(compressa) / float(original)) * 100
+    print(f"Rate: {(100 - rate):.2f} %")
+    print('1:', int(original / compressa))
 compress_hologram(holo,'compressedHologram.txt',wavelet='db4',mode='hard')

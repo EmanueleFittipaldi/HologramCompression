@@ -7,7 +7,6 @@ from HoloUtils import getComplex, intFresnel2D, fourierPhaseMultiply
 holoFileName = 'Hol_2D_dice.mat'
 f = scipy.io.loadmat(holoFileName)  # aprire il file .mat
 print(f.keys())
-
 # Dice Parameters
 pp = np.matrix(f['pitch'][0]) # pixel pitch
 wlen = np.matrix(f['wlen'][0]) # wavelenght
@@ -36,8 +35,9 @@ def showHologram(complex_matrix, title, final):
     plt.title(title)
     plt.show()
 
+print(holo.shape)
 # #original hologram
-showHologram(holo, 'Originale', True)
+# showHologram(holo, 'Originale', False)
 print('Matrice complessa: ', holo.shape)
 U_HOLO, SIGMA_HOLO, V_HOLO = np.linalg.svd(holo)
 print('Matrice U: ', U_HOLO.shape)
@@ -92,8 +92,8 @@ print('Matrice V caricata: ', V_COMPRESS.shape)
 
 # matrice ricostruita
 matrix_rec = reconst_matrix(U_COMPRESS, SIGMA_COMPRESS, V_COMPRESS, 5, K_VALUE+1, 5)
-showHologram(matrix_rec, 'Ologramma decompresso', True)
-np.savez('svdImageCompression/' + holoFileName + '/Matrix_RICOSTRUITA', matrix_rec)
+# showHologram(matrix_rec, 'Ologramma decompresso', True)
+# np.savez('svdImageCompression/' + holoFileName + '/Matrix_RICOSTRUITA', matrix_rec)
 
 def sizeof_fmt(num, suffix="B"):
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
@@ -113,7 +113,8 @@ print('Dimensione matrice V compressa: ', os.path.getsize('svdImageCompression/'
 total_size_HOL_P = os.path.getsize('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz')
 _ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_P)
 print('Somma dimensioni matrici compresse: ', total_size_HOL_P)
-
+print(total_size_HOL_ORIGINAL)
+print(total_size_HOL_P)
 rate = (float(total_size_HOL_P) / float(total_size_HOL_ORIGINAL)) * 100
 print(f"Rate compressione: {(100 - rate):.2f} %")
 

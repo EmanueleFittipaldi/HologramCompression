@@ -33,7 +33,7 @@ def svd_compression(holo_file_name, k_value, holo, pp, wlen, dist):
 
     print('SVD COMPRESSION ALGORITHM')
     # original hologram
-    showHologram(holo, pp, wlen, dist, 'Originale', False)
+    # showHologram(holo, pp, wlen, dist, 'Originale', False)
     print('Matrice complessa: ', holo.shape)
     # decomposizione in tre matrici
     U_HOLO, SIGMA_HOLO, V_HOLO = np.linalg.svd(holo)
@@ -87,7 +87,7 @@ def svd_decompression(holo_file_name, k_value, pp, wlen, dist):
 
     # matrice ricostruita
     matrix_rec = reconst_matrix(U_COMPRESS, SIGMA_COMPRESS, V_COMPRESS, 5, k_value+1, 5)
-    showHologram(matrix_rec, pp, wlen, dist, 'Ologramma decompresso', False)
+    # showHologram(matrix_rec, pp, wlen, dist, 'Ologramma decompresso', False)
     # np.savez(dict_name + holo_file_name + '/Matrix_RICOSTRUITA', matrix_rec)
     results(holo_file_name)
 
@@ -103,6 +103,4 @@ def results(holo_file_name):
     total_size_HOL_P = os.path.getsize(dict_name + holo_file_name + '/U_HOLO_P.npz') + os.path.getsize(dict_name + holo_file_name + '/V_HOLO_P.npz') + os.path.getsize(dict_name + holo_file_name + '/SIGMA_HOLO_P.npz')
     _ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_P)
     print('Somma dimensioni matrici compresse: ', total_size_HOL_P)
-    print(total_size_HOL_ORIGINAL)
-    print(total_size_HOL_P)
     rate(total_size_HOL_ORIGINAL,total_size_HOL_P)

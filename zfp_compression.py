@@ -7,6 +7,7 @@ from HoloUtils import getComplex, hologramReconstruction, sizeof_fmt, rate
 dict_name = 'fpzip_compression/'
 
 def zfp_compression(holo, filename, pp, wlen, dist, rate):
+    print('ZFP COMPRESSION ALGORITHM')
     if not os.path.isdir(dict_name + filename):
         os.makedirs(dict_name + filename)
     np.savez(dict_name + filename + '/matrix_HOLO', holo)
@@ -29,6 +30,7 @@ def zfp_compression(holo, filename, pp, wlen, dist, rate):
         f.write(compressed_data_real)
 
 def zfp_decompression(filename, pp, wlen, dist):
+    print('ZFP DECOMPRESSION ALGORITHM')
     with open(dict_name + filename + '/immaginaria_C.bin', 'rb') as f:
         compressed_data_imag = f.read()
     with open(dict_name + filename + '/reale_C.bin', 'rb') as f:

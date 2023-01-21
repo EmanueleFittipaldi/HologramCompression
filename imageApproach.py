@@ -1,57 +1,56 @@
 import cv2
 import matplotlib
-import scipy
 import numpy as np
 import os
-import pillow_jpls
-from PIL import Image
 
-from HoloUtils import getComplex, hologramReconstruction, intFresnel2D, fourierPhaseMultiply
+from HoloUtils import getComplex, hologramReconstruction, intFresnel2D, fourierPhaseMultiply, rate, sizeof_fmt
 
-holoFileName = 'Hol_2D_dice.mat'
-f = scipy.io.loadmat(holoFileName)  # aprire il file .mat
-print(f.keys())
-# Dice Parameters
-pp = np.matrix(f['pitch'][0]) # pixel pitch
-wlen = np.matrix(f['wlen'][0]) # wavelenght
-dist = np.matrix(f['zobj'][0]) # propogation depth
+dict_name = 'image_based_compression/'
 
-#Holo è la matrice di numeri complessi
-holo = np.matrix(f['Hol'])
-print(holo.shape)
-#Effettuo un crop da 1920*1080 a 1080*1080 perché l'algoritmo per la
-holo = holo[:, 420:]
-holo = holo[:, :-420]
-print(holo.shape)
-np.savez('Matrix_HOLO', holo)
-#Estraggo la matrice delle parti immaginarie e la matrice delle parti reali
-imagMatrix = np.imag(holo)
-realMatrix = np.real(holo)
-name_real = 'matrice_reale.jpg'
-name_imag = 'matrice_immaginaria.jpg'
+def image_based_compression(holo, filename, pp, wlen, dist):
+    print('IMAGE BASED COMPRESSION ALGORITHM')
+    if not os.path.isdir(dict_name + filename):
+        os.makedirs(dict_name + filename)
+    np.savez(dict_name + filename + '/matrix_HOLO', holo)
+    # holog = holo
+    # holog = holog[:, 420:]
+    # holog = holog[:, :-420]
+    # hologramReconstruction(holog,pp,dist,wlen)
 
-#JPG
-matplotlib.image.imsave(name_real, realMatrix, cmap='gray')
-matplotlib.image.imsave(name_imag, imagMatrix, cmap='gray')
-img_real = cv2.imread(name_real, cv2.IMREAD_GRAYSCALE)
-img_imag = cv2.imread(name_imag, cv2.IMREAD_GRAYSCALE)
+    #Estraggo la matrice delle parti immaginarie e la matrice delle parti reali
+    imagMatrix = np.imag(holo)
+    realMatrix = np.real(holo)
+    name_real = dict_name + filename + '/matrice_reale.jpg'
+    name_imag = dict_name + filename + '/matrice_immaginaria.jpg'
+
+    #JPG
+    matplotlib.image.imsave(name_real, realMatrix, cmap='gray')
+    matplotlib.image.imsave(name_imag, imagMatrix, cmap='gray')
+
+def image_based_decompression(filename, pp, wlen, dist):
+    print('IMAGE BASED DECOMPRESSION ALGORITHM')
+    name_real = dict_name + filename + '/matrice_reale.jpg'
+    name_imag = dict_name + filename + '/matrice_immaginaria.jpg'
+
+    img_real = cv2.imread(name_real, cv2.IMREAD_GRAYSCALE)
+    img_imag = cv2.imread(name_imag, cv2.IMREAD_GRAYSCALE)
+
+    #Ricostruisco la matrice dei numeri complessi a partire dalle matrici
+    #contenenti le parti immaginarie e reali e ricostruisco l'ologramma per
+    #verificare la quantità del degradamento dell'immagine
+    complexMatrix = getComplex(img_real,img_imag)
+    # holog = complexMatrix
+    # holog = holog[:, 420:]
+    # holog = holog[:, :-420]
+    # hologramReconstruction(holog, pp, dist, wlen)
 
 
-#BMAP
-# matplotlib.image.imsave(name_real, realMatrix, cmap='gray')
-# matplotlib.image.imsave(name_imag, imagMatrix, cmap='gray')
-#
-# img = cv2.imread(name_real, cv2.IMREAD_GRAYSCALE)
-# img2 = cv2.imread(name_imag, cv2.IMREAD_GRAYSCALE)
+    total_size_HOL_NC = os.path.getsize(dict_name + filename + '/Matrix_HOLO.npz')
+    total_size_HOL_C = os.path.getsize(name_real) + os.path.getsize(name_imag)
+    _, total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_NC)
+    print('NON COMPRESSA: ', total_size_HOL_P_formatted)
 
-#Ricostruisco la matrice dei numeri complessi a partire dalle matrici
-#contenenti le parti immaginarie e reali e ricostruisco l'ologramma per
-#verificare la quantità del degradamento dell'immagine
-#complexMatrix = getComplex(img,img2)
-# hologramReconstruction(complexMatrix,pp,dist,wlen)
+    _, total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_C)
+    print('COMPRESSA: ', total_size_HOL_P_formatted)
 
-total_size_HOL_NC = os.path.getsize('Matrix_HOLO.npz')
-total_size_HOL_C = os.path.getsize(name_real) + os.path.getsize(name_imag)
-rate = (float(total_size_HOL_C) / float(total_size_HOL_NC)) * 100
-print(f"Rate compressione: {(100 - rate):.2f} %")
-print('1:',int(total_size_HOL_NC/total_size_HOL_C))
+    rate(total_size_HOL_NC, total_size_HOL_C)

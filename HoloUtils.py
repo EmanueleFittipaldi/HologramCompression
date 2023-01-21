@@ -452,6 +452,17 @@ def bitPlaneSlicing(imgPath):
 
     return result
 
+def sizeof_fmt(num, suffix="B"):
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}", f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
+
+def rate(holo_original, holo_compressed):
+    rate = (float(holo_compressed) / float(holo_original)) * 100
+    print(f"Rate compressione: {(100 - rate):.2f} %")
+    print(str(int(holo_original / holo_compressed))+':1')
 
 
 

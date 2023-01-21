@@ -1,7 +1,7 @@
 import pywt
 import numpy as np
 import os
-from HoloUtils import rate
+from HoloUtils import rate, sizeof_fmt
 
 dict_name = 'wavelet_compression/'
 
@@ -40,7 +40,7 @@ def wavelet_compression(hologram, pp, wlen, dist, filename, wavelet, mode, value
 
 
 def wavelet_decompression(filename, pp, wlen, dist, wavelet):
-
+    print('WAVELET DECOMPRESSION ALGORITHM')
     with np.load(dict_name + filename +'/wavelet_coeff.npz', allow_pickle=True) as data:
         # ottieni tutti gli array presenti nel file
         coefficients = data['arr_0']
@@ -53,6 +53,9 @@ def wavelet_decompression(filename, pp, wlen, dist, wavelet):
     # hologramReconstruction(holo,pp,dist,wlen)
     compressa = os.path.getsize(dict_name + filename +'/wavelet_coeff.npz')
     original = os.path.getsize(dict_name + filename +'/matrix_HOLO.npz')
-    print(compressa)
-    print(original)
+    _, total_size_HOL_P_formatted = sizeof_fmt(original)
+    print('NON COMPRESSA: ', total_size_HOL_P_formatted)
+
+    _, total_size_HOL_P_formatted = sizeof_fmt(compressa)
+    print('COMPRESSA: ', total_size_HOL_P_formatted)
     rate(original, compressa)

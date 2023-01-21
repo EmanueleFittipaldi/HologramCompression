@@ -66,56 +66,55 @@ if not os.path.isdir('svdImageCompression/' + holoFileName):
 #Matrix Original
 np.savez('svdImageCompression/' + holoFileName + '/Matrix_HOLO', holo)
 
-# PARTE IMAG
 np.savez('svdImageCompression/' + holoFileName + '/U_HOLO_P', U_HOLO_CUT)
 np.savez('svdImageCompression/' + holoFileName + '/V_HOLO_P', V_HOLO_CUT)
 np.savez('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P', SIGMA_HOLO_CUT)
 
-# DECOMPRESSIONE
-
-# carica il file npz
-with np.load('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz') as data:
-    # ottieni tutti gli array presenti nel file
-    U_COMPRESS = data['arr_0']
-
-with np.load('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz') as data:
-    # ottieni tutti gli array presenti nel file
-    V_COMPRESS = data['arr_0']
-
-with np.load('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz') as data:
-    # ottieni tutti gli array presenti nel file
-    SIGMA_COMPRESS = data['arr_0']
-
-print('Matrice U caricata: ', U_COMPRESS.shape)
-print('Matrice SIGMA caricata: ', SIGMA_COMPRESS.shape)
-print('Matrice V caricata: ', V_COMPRESS.shape)
-
-# matrice ricostruita
-matrix_rec = reconst_matrix(U_COMPRESS, SIGMA_COMPRESS, V_COMPRESS, 5, K_VALUE+1, 5)
-# showHologram(matrix_rec, 'Ologramma decompresso', True)
-# np.savez('svdImageCompression/' + holoFileName + '/Matrix_RICOSTRUITA', matrix_rec)
-
-def sizeof_fmt(num, suffix="B"):
-    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
-        if abs(num) < 1024.0:
-            return f"{num:3.1f}", f"{num:3.1f}{unit}{suffix}"
-        num /= 1024.0
-    return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
-
-total_size_HOL_ORIGINAL = os.path.getsize('svdImageCompression/' + holoFileName + '/Matrix_HOLO.npz')
-_ , total_size_HOL_ORIGINAL_formatted = sizeof_fmt(total_size_HOL_ORIGINAL)
-print('Dimensione matrice originale: ', total_size_HOL_ORIGINAL)
-
-print('Dimensione matrice U compressa: ', os.path.getsize('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz'))
-print('Dimensione matrice SIGMA compressa: ', os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz'))
-print('Dimensione matrice V compressa: ', os.path.getsize('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz'))
-
-total_size_HOL_P = os.path.getsize('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz')
-_ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_P)
-print('Somma dimensioni matrici compresse: ', total_size_HOL_P)
-print(total_size_HOL_ORIGINAL)
-print(total_size_HOL_P)
-rate = (float(total_size_HOL_P) / float(total_size_HOL_ORIGINAL)) * 100
-print(f"Rate compressione: {(100 - rate):.2f} %")
-
-print('1:',int(total_size_HOL_ORIGINAL/total_size_HOL_P))
+# # DECOMPRESSIONE
+#
+# # carica il file npz
+# with np.load('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz') as data:
+#     # ottieni tutti gli array presenti nel file
+#     U_COMPRESS = data['arr_0']
+#
+# with np.load('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz') as data:
+#     # ottieni tutti gli array presenti nel file
+#     V_COMPRESS = data['arr_0']
+#
+# with np.load('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz') as data:
+#     # ottieni tutti gli array presenti nel file
+#     SIGMA_COMPRESS = data['arr_0']
+#
+# print('Matrice U caricata: ', U_COMPRESS.shape)
+# print('Matrice SIGMA caricata: ', SIGMA_COMPRESS.shape)
+# print('Matrice V caricata: ', V_COMPRESS.shape)
+#
+# # matrice ricostruita
+# matrix_rec = reconst_matrix(U_COMPRESS, SIGMA_COMPRESS, V_COMPRESS, 5, K_VALUE+1, 5)
+# # showHologram(matrix_rec, 'Ologramma decompresso', True)
+# # np.savez('svdImageCompression/' + holoFileName + '/Matrix_RICOSTRUITA', matrix_rec)
+#
+# def sizeof_fmt(num, suffix="B"):
+#     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+#         if abs(num) < 1024.0:
+#             return f"{num:3.1f}", f"{num:3.1f}{unit}{suffix}"
+#         num /= 1024.0
+#     return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
+#
+# total_size_HOL_ORIGINAL = os.path.getsize('svdImageCompression/' + holoFileName + '/Matrix_HOLO.npz')
+# _ , total_size_HOL_ORIGINAL_formatted = sizeof_fmt(total_size_HOL_ORIGINAL)
+# print('Dimensione matrice originale: ', total_size_HOL_ORIGINAL)
+#
+# print('Dimensione matrice U compressa: ', os.path.getsize('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz'))
+# print('Dimensione matrice SIGMA compressa: ', os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz'))
+# print('Dimensione matrice V compressa: ', os.path.getsize('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz'))
+#
+# total_size_HOL_P = os.path.getsize('svdImageCompression/' + holoFileName + '/U_HOLO_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/V_HOLO_P.npz') + os.path.getsize('svdImageCompression/' + holoFileName + '/SIGMA_HOLO_P.npz')
+# _ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_P)
+# print('Somma dimensioni matrici compresse: ', total_size_HOL_P)
+# print(total_size_HOL_ORIGINAL)
+# print(total_size_HOL_P)
+# rate = (float(total_size_HOL_P) / float(total_size_HOL_ORIGINAL)) * 100
+# print(f"Rate compressione: {(100 - rate):.2f} %")
+#
+# print('1:',int(total_size_HOL_ORIGINAL/total_size_HOL_P))

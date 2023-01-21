@@ -1,9 +1,10 @@
 import os
 import cv2
-import zfpy
+
 import matplotlib
 import numpy as np
 import scipy.io
+import zfpy
 from numpy import ndarray
 
 from HoloUtils import getComplex, hologramReconstruction
@@ -16,22 +17,20 @@ def sizeof_fmt(num, suffix="B"):
         num /= 1024.0
     return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
 
-holoFileName = 'Hol_2D_dice.mat'
+holoFileName = 'CornellBox2_10K.mat'
 f = scipy.io.loadmat(holoFileName)  # aprire il file .mat
-#Parametri
-pp = 8e-6  # pixel pitch
-pp = np.matrix(pp)
-wlen = 632.8e-9  # wavelenght
-wlen = np.matrix(wlen)
-dist = 9e-1  # propogation depth
-dist = np.matrix(dist)
-
+print(f.keys())
+# Dice Parameters
+pp = np.matrix(f['pp'][0]) # pixel pitch
+wlen = np.matrix(f['wlen'][0]) # wavelenght
+dist = np.matrix(f['zrec'][0]) # propogation depth
 # holo è la matrice di numeri complessi
-holo = np.matrix(f['Hol'])
+holo = np.matrix(f['H'])
+
 
 #Effettuo un crop da 1920*1080 a 1080*1080 perché l'algoritmo per la
-holo = holo[:, 420:]
-holo = holo[:, :-420]
+# holo = holo[:, 420:]
+# holo = holo[:, :-420]
 np.savez('fpzipCompression/totale_NC', holo)
 
 #Estraggo la matrice delle parti immaginarie e la matrice delle parti reali
@@ -58,7 +57,7 @@ np.testing.assert_allclose(realMatrix, decompressed_array_real, atol=1e-1)
 
 #Ricostruzione della matrice
 complexMatrix = getComplex(decompressed_array_real, decompressed_array_imag)
-hologramReconstruction(complexMatrix, pp, dist, wlen)
+# hologramReconstruction(complexMatrix, pp, dist, wlen)
 
 
 total_size_HOL_NC = os.path.getsize('fpzipCompression/immaginaria_NC.npz') + os.path.getsize('fpzipCompression/reale_NC.npz')
@@ -72,7 +71,7 @@ print('COMPRESSA: ', total_size_HOL_P_formatted)
 rate = (float(total_size_HOL_C) / float(total_size_HOL_NC)) * 100
 print(f"Rate: {(100 - rate):.2f} %")
 
-
+print('1:',int(total_size_HOL_NC/total_size_HOL_C))
 
 
 

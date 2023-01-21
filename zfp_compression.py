@@ -1,78 +1,64 @@
 import os
-import cv2
-import zfpy
-import matplotlib
 import numpy as np
-import scipy.io
-from numpy import ndarray
+import zfpy
 
-from HoloUtils import getComplex, hologramReconstruction
+from HoloUtils import getComplex, hologramReconstruction, sizeof_fmt, rate
 
+dict_name = 'fpzip_compression/'
 
-def sizeof_fmt(num, suffix="B"):
-    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
-        if abs(num) < 1024.0:
-            return f"{num:3.1f}", f"{num:3.1f}{unit}{suffix}"
-        num /= 1024.0
-    return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
+def zfp_compression(holo, filename, pp, wlen, dist, rate):
+    print('ZFP COMPRESSION ALGORITHM')
+    if not os.path.isdir(dict_name + filename):
+        os.makedirs(dict_name + filename)
+    np.savez(dict_name + filename + '/matrix_HOLO', holo)
+    # holog = holo
+    # holog = holog[:, 420:]
+    # holog = holog[:, :-420]
+    # hologramReconstruction(holog,pp,dist,wlen)
+    #Estraggo la matrice delle parti immaginarie e la matrice delle parti reali
+    imagMatrix = np.imag(holo)
+    realMatrix = np.real(holo)
 
-holoFileName = 'Hol_2D_dice.mat'
-f = scipy.io.loadmat(holoFileName)  # aprire il file .mat
-#Parametri
-pp = 8e-6  # pixel pitch
-pp = np.matrix(pp)
-wlen = 632.8e-9  # wavelenght
-wlen = np.matrix(wlen)
-dist = 9e-1  # propogation depth
-dist = np.matrix(dist)
+    # Comprimo matrice immaginaria con zfpy
+    compressed_data_imag = zfpy.compress_numpy(imagMatrix, rate=rate)
+    # Comprimo matrice reale con zfpy
+    compressed_data_real = zfpy.compress_numpy(realMatrix,rate=rate)
 
-# holo è la matrice di numeri complessi
-holo = np.matrix(f['Hol'])
+    with open(dict_name + filename + '/immaginaria_C.bin', 'wb') as f:
+        f.write(compressed_data_imag)
+    with open(dict_name + filename + '/reale_C.bin', 'wb') as f:
+        f.write(compressed_data_real)
 
-#Effettuo un crop da 1920*1080 a 1080*1080 perché l'algoritmo per la
-holo = holo[:, 420:]
-holo = holo[:, :-420]
-np.savez('fpzipCompression/totale_NC', holo)
+def zfp_decompression(filename, pp, wlen, dist):
+    print('ZFP DECOMPRESSION ALGORITHM')
+    with open(dict_name + filename + '/immaginaria_C.bin', 'rb') as f:
+        compressed_data_imag = f.read()
+    with open(dict_name + filename + '/reale_C.bin', 'rb') as f:
+        compressed_data_real = f.read()
 
-#Estraggo la matrice delle parti immaginarie e la matrice delle parti reali
-imagMatrix = np.imag(holo)
-realMatrix = np.real(holo)
-np.savez('fpzipCompression/immaginaria_NC', imagMatrix)
-np.savez('fpzipCompression/reale_NC', realMatrix)
+    decompressed_array_imag = zfpy.decompress_numpy(compressed_data_imag)
+    decompressed_array_real = zfpy.decompress_numpy(compressed_data_real)
 
-# Comprimo matrice immaginaria con zfpy
-compressed_data_imag = zfpy.compress_numpy(imagMatrix, rate=2)
-np.savez('fpzipCompression/immaginaria_C', compressed_data_imag)
-decompressed_array_imag = zfpy.decompress_numpy(compressed_data_imag)
+    # confirm lossy compression/decompression
+    # np.testing.assert_allclose(realMatrix, decompressed_array_real, atol=1e-6)
+    # confirm lossy compression/decompression
+    # np.testing.assert_allclose(imagMatrix, decompressed_array_imag, atol=1e-6)
 
-# confirm lossy compression/decompression
-#np.testing.assert_allclose(imagMatrix, decompressed_array_imag, atol=1e-6)
+    #Ricostruzione della matrice
+    complexMatrix = getComplex(decompressed_array_real, decompressed_array_imag)
+    # holog = complexMatrix
+    # holog = holog[:, 420:]
+    # holog = holog[:, :-420]
+    # hologramReconstruction(holog,pp,dist,wlen)
+    total_size_HOL_NC = os.path.getsize(dict_name + filename + '/matrix_HOLO.npz')
+    _ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_NC)
+    print('NON COMPRESSA: ', total_size_HOL_P_formatted)
 
-# Comprimo matrice reale con zfpy
-compressed_data_real = zfpy.compress_numpy(realMatrix,rate=2)
-np.savez('fpzipCompression/reale_C', compressed_data_real)
-decompressed_array_real = zfpy.decompress_numpy(compressed_data_real)
+    total_size_HOL_C = os.path.getsize(dict_name + filename + '/immaginaria_C.bin') + os.path.getsize(dict_name + filename + '/reale_C.bin')
+    _ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_C)
+    print('COMPRESSA: ', total_size_HOL_P_formatted)
 
-# confirm lossy compression/decompression
-#np.testing.assert_allclose(realMatrix, decompressed_array_real, atol=1e-6)
-
-#Ricostruzione della matrice
-complexMatrix = getComplex(decompressed_array_real, decompressed_array_imag)
-hologramReconstruction(complexMatrix, pp, dist, wlen)
-
-
-total_size_HOL_NC = os.path.getsize('fpzipCompression/immaginaria_NC.npz') + os.path.getsize('fpzipCompression/reale_NC.npz')
-_ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_NC)
-print('NON COMPRESSA: ', total_size_HOL_P_formatted)
-
-total_size_HOL_C = os.path.getsize('fpzipCompression/immaginaria_C.npz') + os.path.getsize('fpzipCompression/reale_C.npz')
-_ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_C)
-print('COMPRESSA: ', total_size_HOL_P_formatted)
-
-rate = (float(total_size_HOL_C) / float(total_size_HOL_NC)) * 100
-print(f"Rate: {(100 - rate):.2f} %")
-
-
+    rate(total_size_HOL_NC, total_size_HOL_C)
 
 
 

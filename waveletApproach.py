@@ -1,27 +1,12 @@
 import pywt
-import scipy.io
 import numpy as np
+import os
+from HoloUtils import rate, sizeof_fmt
 
-from HoloUtils import hologramReconstruction, compressBZIP2
+dict_name = 'wavelet_compression/'
 
-f = scipy.io.loadmat('Hol_2D_dice.mat')  # aprire il file .mat
 
-#Parametri del dado
-pp = 8e-6  # pixel pitch
-pp = np.matrix(pp)
-wlen = 632.8e-9  # wavelenght
-wlen = np.matrix(wlen)
-dist = 9e-1  # propogation depth
-dist = np.matrix(dist)
-
-#Holo è la matrice di numeri complessi
-holo = np.matrix(f['Hol'])
-
-#Effettuo un crop da 1920*1080 a 1080*1080 perché l'algoritmo per la
-holo = holo[:, 420:]
-holo = holo[:, :-420]
-
-def compress_hologram(hologram, filename, wavelet='db4', mode='hard'):
+def wavelet_compression(hologram, pp, wlen, dist, filename, wavelet, mode, value):
     """The wavedec2 method from the pywt library is used to perform a 2D wavelet transform on a given signal or image.
     This method decomposes the input data into a set of wavelet coefficients, which represent
     the different frequency components of the data. The wavedec2 method returns a list of these coefficients,
@@ -31,24 +16,46 @@ def compress_hologram(hologram, filename, wavelet='db4', mode='hard'):
     the frequency content of a signal or image. It allows for the representation of a signal
     or image in terms of both time and frequency, making it useful for many applications,
     such as image and audio compression, noise removal, and signal denoising."""
+    print('WAVELET COMPRESSION ALGORITHM')
+    #SALVATAGGIO MATRICI
+    if not os.path.isdir(dict_name + filename):
+        os.makedirs(dict_name + filename)
 
+    np.savez(dict_name + filename + '/matrix_HOLO', hologram)
+    # holo = hologram
+    # holo = holo[:, 420:]
+    # holo = holo[:, :-420]
+    # hologramReconstruction(holo,pp,dist,wlen)
     # Perform a 2D wavelet transform on the hologram data
     coefficients = pywt.wavedec2(hologram, wavelet=wavelet)
 
     # Apply lossy compression to the wavelet coefficients
-    # value = 200000000
     for coeffs in coefficients:
         for i in range(len(coeffs)):
             for j in range(len(coeffs[i])):
-                coeffs[i][j] = pywt.threshold(coeffs[i][j],value=200000000, mode=mode)
+                coeffs[i][j] = pywt.threshold(coeffs[i][j], value=value, mode=mode)
+
+    coefficients = np.array(coefficients, dtype='object')
+    np.savez_compressed(dict_name + filename +'/wavelet_coeff.npz', coefficients)
 
 
-    coefficients = np.array(coefficients,dtype='object')
-    np.savez_compressed('waveletCoeff.npz', coefficients)
-
-    #Reconstruct the compressed hologram data
-    coefficients =  coefficients.tolist()
+def wavelet_decompression(filename, pp, wlen, dist, wavelet):
+    print('WAVELET DECOMPRESSION ALGORITHM')
+    with np.load(dict_name + filename +'/wavelet_coeff.npz', allow_pickle=True) as data:
+        # ottieni tutti gli array presenti nel file
+        coefficients = data['arr_0']
+    # Reconstruct the compressed hologram data
+    coefficients = coefficients.tolist()
     compressed_hologram = pywt.waverec2(coefficients, wavelet=wavelet)
-    hologramReconstruction(compressed_hologram,pp,dist,wlen)
+    # holo = compressed_hologram
+    # holo = holo[:, 420:]
+    # holo = holo[:, :-420]
+    # hologramReconstruction(holo,pp,dist,wlen)
+    compressa = os.path.getsize(dict_name + filename +'/wavelet_coeff.npz')
+    original = os.path.getsize(dict_name + filename +'/matrix_HOLO.npz')
+    _, total_size_HOL_P_formatted = sizeof_fmt(original)
+    print('NON COMPRESSA: ', total_size_HOL_P_formatted)
 
-compress_hologram(holo,'compressedHologram.txt',wavelet='db4',mode='hard')
+    _, total_size_HOL_P_formatted = sizeof_fmt(compressa)
+    print('COMPRESSA: ', total_size_HOL_P_formatted)
+    rate(original, compressa)

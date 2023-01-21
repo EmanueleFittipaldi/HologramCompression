@@ -115,6 +115,12 @@ def fourierPhaseMultiply(r, fw, pp, z, wlen):
     p = np.multiply(temp, (xx + xx.transpose())) + (2 * np.pi * z) / wlen
     return givenPhaseRot(r, p, fw)
 
+from scipy.special import fresnel
+def fresnel_inverse_2d(U, x, y, wavelength, distance):
+    k = 2 * np.pi / wavelength
+    r = np.sqrt(x**2 + y**2 + distance**2)
+    C, S = fresnel(x/(wavelength*distance))
+    return (np.exp(1j*k*r)/(1j*wavelength*distance))*U*(C+1j*S)
 
 def hologramReconstruction(holo, pp, dist, wlen):
     """
@@ -136,7 +142,7 @@ def hologramReconstruction(holo, pp, dist, wlen):
     # Ricostruzione dell'ologramma tramite diffrazione di Fresnel
     t = intFresnel2D(np.csingle(holo), False, pp, dist, wlen)
     t = fourierPhaseMultiply(t, False, pp, dist, wlen)
-    plt.imshow(np.imag(t), cmap='gray')
+    plt.imshow(np.imag(t), cmap='gray_r')
     plt.show()
 
 
@@ -446,6 +452,17 @@ def bitPlaneSlicing(imgPath):
 
     return result
 
+def sizeof_fmt(num, suffix="B"):
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}", f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
+
+def rate(holo_original, holo_compressed):
+    rate = (float(holo_compressed) / float(holo_original)) * 100
+    print(f"Rate compressione: {(100 - rate):.2f} %")
+    print(str(int(holo_original / holo_compressed))+':1')
 
 
 

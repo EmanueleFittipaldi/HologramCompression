@@ -17,19 +17,16 @@ def sizeof_fmt(num, suffix="B"):
     return f"{num:.1f}", f"{num:.1f}Yi{suffix}"
 
 
-#Parametri
-pp = 8e-6  # pixel pitch
-pp = np.matrix(pp)
-wlen = 632.8e-9  # wavelenght
-wlen = np.matrix(wlen)
-dist = 9e-1  # propogation depth
-dist = np.matrix(dist)
-
-# holo è la matrice di numeri complessi
-f = scipy.io.loadmat('Hol_2D_dice.mat')
-
+holoFileName = 'Hol_2D_dice.mat'
+f = scipy.io.loadmat(holoFileName)  # aprire il file .mat
+print(f.keys())
+# Dice Parameters
+pp = np.matrix(f['pitch'][0]) # pixel pitch
+wlen = np.matrix(f['wlen'][0]) # wavelenght
+dist = np.matrix(f['zobj'][0]) # propogation depth
 # holo è la matrice di numeri complessi
 holo = np.matrix(f['Hol'])
+
 
 #Effettuo un crop da 1920*1080 a 1080*1080 perché l'algoritmo per la
 holo = holo[:, 420:]
@@ -70,7 +67,7 @@ img2 = cv2.imread('matrice_immaginaria.bmp', cv2.IMREAD_GRAYSCALE)
 complexMatrix = getComplex(img,img2)
 
 
-hologramReconstruction(complexMatrix, pp, dist, wlen)
+# hologramReconstruction(complexMatrix, pp, dist, wlen)
 
 total_size_HOL_NC = os.path.getsize('fpzipCompression/immaginaria_NC.npz') + os.path.getsize('fpzipCompression/reale_NC.npz')
 _ , total_size_HOL_P_formatted = sizeof_fmt(total_size_HOL_NC)

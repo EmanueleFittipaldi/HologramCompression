@@ -3,41 +3,43 @@ import matplotlib.pyplot as plt
 import scipy.io
 import scipy.fft
 
-
-# Per scalare il plot dell'ologramma ricostruito
-plt.rcParams["figure.figsize"] = (60, 60)
+from imageApproach import image_based_compression, image_based_decompression
+from svd_image_compression import svd_compression, svd_decompression
+from waveletApproach import wavelet_compression, wavelet_decompression
+from zfp_compression import zfp_compression, zfp_decompression
 
 
 def main():
-    f = scipy.io.loadmat('Hol_2D_dice.mat')  # aprire il file .mat
-
+    # Caricamento ologramma
+    holo_file_name = 'Hol_2D_multi.mat'
+    f = scipy.io.loadmat(holo_file_name)  # aprire il file .mat
+    print(f.keys())
     # Dice Parameters
-    pp = 8e-6  # pixel pitch
-    pp = np.matrix(pp)
-    wlen = 632.8e-9  # wavelenght
-    wlen = np.matrix(wlen)
-    dist = 9e-1  # propogation depth
-    dist = np.matrix(dist)
-
+    pp = np.matrix(f['pitch'][0])  # pixel pitch
+    wlen = np.matrix(f['wlen'][0])  # wavelenght
+    dist = np.matrix(f['zobj1'][0])  # propogation depth
     # holo è la matrice di numeri complessi
     holo = np.matrix(f['Hol'])
 
-    # Effettuo un crop da 1920*1080 a 1080*1080 perché l'algoritmo per la
-    holo = holo[:, 420:]
-    holo = holo[:, :-420]
+    # SVD
+    k_value_svd = 20
+    svd_compression(holo_file_name, k_value_svd, holo, pp, wlen, dist)
+    svd_decompression(holo_file_name, k_value_svd, pp, wlen, dist)
 
-    # Prova di ricostruzione ologramma dalle due jpeg salvate
+    # WAVELET
+    wavelet_value = 200000000
+    wavelet_compression(holo, pp, wlen, dist, holo_file_name, wavelet='db4', mode='hard', value=wavelet_value)
+    wavelet_decompression(holo_file_name, pp, wlen, dist, wavelet='db4')
 
-    # img = cv.imread('/Users/emanuelefittipaldi/PycharmProjects/HologramCompression/matrice_reale.jpg', cv.IMREAD_GRAYSCALE)
-    # img2 = cv.imread('/Users/emanuelefittipaldi/PycharmProjects/HologramCompression/matrice_immaginaria.jpg', cv.IMREAD_GRAYSCALE)
-    # ricostruzioneOlogramma(getComplex(img,img2), pp, dist, wlen)
+    # ZFP
+    zfp_compression(holo, holo_file_name, pp, wlen, dist, rate=2)
+    zfp_decompression(holo_file_name, pp, wlen, dist)
 
-    # Creazione delle immagini della matrice reale ed immaginaria
+    # IMAGE BASED
+    image_based_compression(holo, holo_file_name, pp, wlen, dist)
+    image_based_decompression(holo_file_name, pp, wlen, dist)
 
-    # matriceReale = np.real(holo)
-    # matriceImmaginaria = np.imag(holo)
-    # matplotlib.image.imsave('matrice_reale.jpg', matriceReale, cmap='gray')
-    # matplotlib.image.imsave('matrice_immaginaria.jpg', matriceImmaginaria, cmap='gray')
+
 
 if __name__ == '__main__':
     main()
